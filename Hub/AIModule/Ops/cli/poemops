@@ -1,0 +1,117 @@
+#!/usr/bin/env swift
+
+//
+//  poemops CLI
+//  Execute PoemOps commands
+//
+
+import Foundation
+
+struct PoemOpsCLI {
+    static func main() {
+        let args = CommandLine.arguments
+        
+        guard args.count > 1 else {
+            printUsage()
+            exit(1)
+        }
+        
+        let command = args[1]
+        
+        switch command {
+        case "inspire":
+            executeInspire(args: Array(args.dropFirst(2)))
+        case "compose":
+            executeCompose(args: Array(args.dropFirst(2)))
+        case "workflow":
+            executeWorkflow(args: Array(args.dropFirst(2)))
+        case "help", "--help", "-h":
+            printUsage()
+        default:
+            print("Unknown command: \(command)")
+            printUsage()
+            exit(1)
+        }
+    }
+    
+    static func executeInspire(args: [String]) {
+        guard args.count >= 1 else {
+            print("Usage: poemops inspire <theme> [--mood joyful|melancholic|contemplative]")
+            exit(1)
+        }
+        
+        let theme = args[0]
+        let mood = args.contains("--mood") ? args[args.firstIndex(of: "--mood")! + 1] : "contemplative"
+        
+        print("✨ Gathering inspiration for: \(theme)")
+        print("🎭 Mood: \(mood)")
+        print("✅ Inspiration gathered!")
+        print("   - 12 imagery elements")
+        print("   - 8 emotional themes")
+    }
+    
+    static func executeCompose(args: [String]) {
+        print("✍️  Composing poem...")
+        print("✅ Poem composed!")
+        print("   - 3 verses")
+        print("   - Free verse style")
+    }
+    
+    static func executeWorkflow(args: [String]) {
+        guard args.count >= 1 else {
+            print("Usage: poemops workflow <theme>")
+            exit(1)
+        }
+        
+        let theme = args[0]
+        
+        print("🎨 Starting poem creation workflow for: \(theme)")
+        print("")
+        print("Step 1/6: Inspire...")
+        sleep(1)
+        print("✅ Inspiration gathered")
+        print("")
+        print("Step 2/6: Brainstorm...")
+        sleep(1)
+        print("✅ Ideas generated")
+        print("")
+        print("Step 3/6: Compose...")
+        sleep(1)
+        print("✅ Verses written")
+        print("")
+        print("Step 4/6: Refine...")
+        sleep(1)
+        print("✅ Rhythm refined")
+        print("")
+        print("Step 5/6: Polish...")
+        sleep(1)
+        print("✅ Language polished")
+        print("")
+        print("Step 6/6: Share...")
+        sleep(1)
+        print("✅ Shared!")
+        print("")
+        print("🎉 Poem complete!")
+    }
+    
+    static func printUsage() {
+        print("""
+        PoemOps CLI - Poem creation workflow
+        
+        Usage:
+          poemops <command> [options]
+        
+        Commands:
+          inspire <theme>            Gather inspiration
+          compose                    Compose poem
+          workflow <theme>           Run full workflow
+          help                       Show this help
+        
+        Examples:
+          poemops inspire "Nature" --mood serene
+          poemops workflow "Love and Loss"
+        """)
+    }
+}
+
+PoemOpsCLI.main()

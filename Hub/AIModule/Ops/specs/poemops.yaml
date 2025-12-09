@@ -1,0 +1,110 @@
+name: PoemOps
+version: 1.0.0
+description: Creative poem composition workflow
+
+operations:
+  inspire:
+    description: Gather inspiration and themes
+    inputs:
+      - name: theme
+        type: string
+        required: true
+      - name: mood
+        type: enum
+        values: [joyful, melancholic, contemplative, passionate, serene]
+        required: true
+    outputs:
+      - imagery: array<string>
+      - emotions: array<string>
+    agent_roles: [designer, technicalArtist]
+    sla: 1800
+    
+  brainstorm:
+    description: Brainstorm imagery and metaphors
+    inputs:
+      - name: inspiration
+        type: Inspiration
+        required: true
+    outputs:
+      - metaphors: array<string>
+      - wordBank: array<string>
+    agent_roles: [designer, technicalWriter]
+    sla: 3600
+    
+  compose:
+    description: Compose initial verses
+    inputs:
+      - name: brainstorm
+        type: BrainstormResult
+        required: true
+      - name: style
+        type: enum
+        values: [freeVerse, haiku, sonnet, limerick, acrostic]
+        default: freeVerse
+    outputs:
+      - verses: array<string>
+    agent_roles: [technicalWriter, designer]
+    sla: 7200
+    
+  refine:
+    description: Refine rhythm and rhyme
+    inputs:
+      - name: draft
+        type: PoemDraft
+        required: true
+      - name: focus
+        type: enum
+        values: [rhythm, rhyme, imagery, emotion]
+        default: rhythm
+    outputs:
+      - refinedVerses: array<string>
+    agent_roles: [technicalWriter]
+    sla: 3600
+    
+  polish:
+    description: Polish language and flow
+    inputs:
+      - name: draft
+        type: PoemDraft
+        required: true
+    outputs:
+      - finalContent: string
+      - wordCount: number
+    agent_roles: [technicalWriter, qaEngineer]
+    sla: 1800
+    
+  share:
+    description: Share poem
+    inputs:
+      - name: poem
+        type: FinalPoem
+        required: true
+      - name: platform
+        type: enum
+        values: [poetryFoundation, allPoetry, helloPoetry, personal]
+        required: true
+    outputs:
+      - url: string
+      - sharedAt: date
+    agent_roles: [communityManager]
+    sla: 900
+
+workflow:
+  dag:
+    - inspire -> brainstorm
+    - brainstorm -> compose
+    - compose -> refine
+    - refine -> polish
+    - polish -> share
+
+raci:
+  inspire:
+    responsible: [designer]
+    accountable: [productManager]
+    consulted: [technicalArtist]
+    informed: [teamLead]
+  compose:
+    responsible: [technicalWriter]
+    accountable: [designer]
+    consulted: [technicalArtist]
+    informed: [teamLead]

@@ -1,0 +1,135 @@
+name: ArticleOps
+version: 1.0.0
+description: Complete article creation workflow with AI agents
+
+operations:
+  research:
+    description: Research topic and gather sources
+    inputs:
+      - name: topic
+        type: string
+        required: true
+      - name: depth
+        type: enum
+        values: [quick, standard, deep]
+        default: standard
+    outputs:
+      - sources: array<string>
+      - keyPoints: array<string>
+      - duration: number
+    agent_roles: [technicalWriter, dataScientist]
+    sla: 7200 # 2 hours
+    
+  outline:
+    description: Create article outline
+    inputs:
+      - name: research
+        type: ResearchResult
+        required: true
+      - name: structure
+        type: ArticleStructure
+        default: standard
+    outputs:
+      - title: string
+      - sections: array<string>
+      - estimatedWordCount: number
+    agent_roles: [technicalWriter, productManager]
+    sla: 1800 # 30 minutes
+    
+  draft:
+    description: Write first draft
+    inputs:
+      - name: outline
+        type: ArticleOutline
+        required: true
+      - name: tone
+        type: enum
+        values: [professional, casual, technical, conversational]
+        default: professional
+    outputs:
+      - content: string
+      - wordCount: number
+    agent_roles: [technicalWriter]
+    sla: 14400 # 4 hours
+    
+  review:
+    description: Review content and structure
+    inputs:
+      - name: draft
+        type: ArticleDraft
+        required: true
+    outputs:
+      - overallScore: number
+      - strengths: array<string>
+      - improvements: array<string>
+    agent_roles: [technicalWriter, qaEngineer]
+    sla: 3600 # 1 hour
+    
+  edit:
+    description: Edit for clarity and flow
+    inputs:
+      - name: draft
+        type: ArticleDraft
+        required: true
+      - name: feedback
+        type: ReviewResult
+        required: true
+    outputs:
+      - editedContent: string
+    agent_roles: [technicalWriter]
+    sla: 7200 # 2 hours
+    
+  proofread:
+    description: Final proofread and formatting
+    inputs:
+      - name: draft
+        type: ArticleDraft
+        required: true
+    outputs:
+      - errors: array<string>
+      - suggestions: array<string>
+      - readabilityScore: number
+    agent_roles: [technicalWriter, qaEngineer]
+    sla: 1800 # 30 minutes
+    
+  publish:
+    description: Publish article
+    inputs:
+      - name: draft
+        type: ArticleDraft
+        required: true
+      - name: platform
+        type: enum
+        values: [medium, devto, hashnode, blog]
+        required: true
+    outputs:
+      - url: string
+      - publishedAt: date
+    agent_roles: [technicalWriter, communityManager]
+    sla: 900 # 15 minutes
+
+workflow:
+  dag:
+    - research -> outline
+    - outline -> draft
+    - draft -> review
+    - review -> edit
+    - edit -> proofread
+    - proofread -> publish
+
+raci:
+  research:
+    responsible: [technicalWriter, dataScientist]
+    accountable: [productManager]
+    consulted: [domainExpert]
+    informed: [teamLead]
+  draft:
+    responsible: [technicalWriter]
+    accountable: [productManager]
+    consulted: [technicalWriter]
+    informed: [teamLead]
+  publish:
+    responsible: [technicalWriter]
+    accountable: [productManager]
+    consulted: [communityManager]
+    informed: [allStakeholders]

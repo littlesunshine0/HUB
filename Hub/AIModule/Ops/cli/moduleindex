@@ -1,0 +1,188 @@
+#!/usr/bin/env swift
+
+//
+//  moduleindex CLI
+//  Generate enhanced module indexes for Swift files
+//
+
+import Foundation
+
+struct ModuleIndexCLI {
+    static func main() {
+        let args = CommandLine.arguments
+        
+        guard args.count > 1 else {
+            printUsage()
+            exit(1)
+        }
+        
+        let command = args[1]
+        
+        switch command {
+        case "generate":
+            generateIndex(args: Array(args.dropFirst(2)))
+        case "batch":
+            batchGenerate(args: Array(args.dropFirst(2)))
+        case "help", "--help", "-h":
+            printUsage()
+        default:
+            print("Unknown command: \(command)")
+            printUsage()
+            exit(1)
+        }
+    }
+    
+    static func generateIndex(args: [String]) {
+        guard args.count >= 1 else {
+            print("Usage: moduleindex generate <file.swift>")
+            exit(1)
+        }
+        
+        let filePath = args[0]
+        
+        guard let content = try? String(contentsOfFile: filePath) else {
+            print("❌ Error: Could not read file: \(filePath)")
+            exit(1)
+        }
+        
+        print("📝 Generating module index for: \(filePath)")
+        print("")
+        
+        let index = generateModuleIndex(fileName: URL(fileURLWithPath: filePath).lastPathComponent, content: content)
+        print(index)
+        
+        // Save to file
+        let outputPath = filePath.replacingOccurrences(of: ".swift", with: "_INDEX.md")
+        try? index.write(toFile: outputPath, atomically: true, encoding: .utf8)
+        print("")
+        print("✅ Index saved to: \(outputPath)")
+    }
+    
+    static func batchGenerate(args: [String]) {
+        guard args.count >= 1 else {
+            print("Usage: moduleindex batch <directory>")
+            exit(1)
+        }
+        
+        let directoryPath = args[0]
+        
+        print("📁 Generating indexes for directory: \(directoryPath)")
+        print("")
+        
+        let fileManager = FileManager.default
+        guard let enumerator = fileManager.enumerator(atPath: directoryPath) else {
+            print("❌ Error: Could not access directory")
+            exit(1)
+        }
+        
+        var count = 0
+        
+        for case let file as String in enumerator {
+            if file.hasSuffix(".swift") && !file.contains("_INDEX") {
+                let fullPath = (directoryPath as NSString).appendingPathComponent(file)
+                
+                if let content = try? String(contentsOfFile: fullPath) {
+                    let index = generateModuleIndex(fileName: URL(fileURLWithPath: fullPath).lastPathComponent, content: content)
+                    let outputPath = fullPath.replacingOccurrences(of: ".swift", with: "_INDEX.md")
+                    try? index.write(toFile: outputPath, atomically: true, encoding: .utf8)
+                    count += 1
+                    print("✅ \(file)")
+                }
+            }
+        }
+        
+        print("")
+        print("🎉 Generated \(count) module indexes")
+    }
+    
+    static func generateModuleIndex(fileName: String, content: String) -> String {
+        var output = "# \(fileName) Module Index\n\n"
+        output += "**Generated:** \(Date())\n\n"
+        output += "---\n\n"
+        
+        let lines = content.components(separatedBy: .newlines)
+        var sectionNumber = 1
+        var inDeclaration = false
+        var currentType = ""
+        var currentName = ""
+        
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            
+            // Detect type declarations
+            if trimmed.hasPrefix("public enum ") || trimmed.hasPrefix("enum ") {
+                output += "## \(sectionNumber). Enum: \(extractName(from: trimmed, keyword: "enum"))\n\n"
+                sectionNumber += 1
+            } else if trimmed.hasPrefix("public struct ") || trimmed.hasPrefix("struct ") {
+                output += "## \(sectionNumber). Struct: \(extractName(from: trimmed, keyword: "struct"))\n\n"
+                sectionNumber += 1
+            } else if trimmed.hasPrefix("public class ") || trimmed.hasPrefix("class ") {
+                output += "## \(sectionNumber). Class: \(extractName(from: trimmed, keyword: "class"))\n\n"
+                sectionNumber += 1
+            } else if trimmed.hasPrefix("public actor ") || trimmed.hasPrefix("actor ") {
+                output += "## \(sectionNumber). Actor: \(extractName(from: trimmed, keyword: "actor"))\n\n"
+                sectionNumber += 1
+            }
+            
+            // Detect properties
+            if trimmed.hasPrefix("public var ") || trimmed.hasPrefix("var ") ||
+               trimmed.hasPrefix("public let ") || trimmed.hasPrefix("let ") {
+                let propName = extractPropertyName(from: trimmed)
+                output += "- **Property:** `\(propName)`\n"
+            }
+            
+            // Detect functions
+            if trimmed.contains("func ") {
+                let funcName = extractFunctionName(from: trimmed)
+                output += "- **Function:** `\(funcName)()`\n"
+            }
+        }
+        
+        return output
+    }
+    
+    static func extractName(from line: String, keyword: String) -> String {
+        guard let range = line.range(of: keyword + " ") else { return "" }
+        let afterKeyword = String(line[range.upperBound...])
+        let components = afterKeyword.components(separatedBy: CharacterSet(charactersIn: " :<{"))
+        return components.first?.trimmingCharacters(in: .whitespaces) ?? ""
+    }
+    
+    static func extractPropertyName(from line: String) -> String {
+        let keyword = line.contains("var ") ? "var " : "let "
+        guard let range = line.range(of: keyword) else { return "" }
+        let afterKeyword = String(line[range.upperBound...])
+        let components = afterKeyword.components(separatedBy: CharacterSet(charactersIn: " :="))
+        return components.first?.trimmingCharacters(in: .whitespaces) ?? ""
+    }
+    
+    static func extractFunctionName(from line: String) -> String {
+        guard let range = line.range(of: "func ") else { return "" }
+        let afterFunc = String(line[range.upperBound...])
+        let components = afterFunc.components(separatedBy: CharacterSet(charactersIn: "(<"))
+        return components.first?.trimmingCharacters(in: .whitespaces) ?? ""
+    }
+    
+    static func printUsage() {
+        print("""
+        ModuleIndex CLI - Generate enhanced module indexes
+        
+        Usage:
+          moduleindex <command> [options]
+        
+        Commands:
+          generate <file.swift>      Generate index for single file
+          batch <directory>          Generate indexes for all Swift files
+          help                       Show this help
+        
+        Examples:
+          moduleindex generate Hub/AIAgents/RoleBasedAgentSystem.swift
+          moduleindex batch Hub/AIAgents
+        
+        Output:
+          Creates *_INDEX.md files alongside Swift files
+        """)
+    }
+}
+
+ModuleIndexCLI.main()

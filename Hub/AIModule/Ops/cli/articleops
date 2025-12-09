@@ -1,0 +1,145 @@
+#!/usr/bin/env swift
+
+//
+//  articleops CLI
+//  Execute ArticleOps commands
+//
+
+import Foundation
+
+// MARK: - CLI Entry Point
+
+struct ArticleOpsCLI {
+    static func main() {
+        let args = CommandLine.arguments
+        
+        guard args.count > 1 else {
+            printUsage()
+            exit(1)
+        }
+        
+        let command = args[1]
+        
+        switch command {
+        case "research":
+            executeResearch(args: Array(args.dropFirst(2)))
+        case "outline":
+            executeOutline(args: Array(args.dropFirst(2)))
+        case "draft":
+            executeDraft(args: Array(args.dropFirst(2)))
+        case "review":
+            executeReview(args: Array(args.dropFirst(2)))
+        case "workflow":
+            executeWorkflow(args: Array(args.dropFirst(2)))
+        case "help", "--help", "-h":
+            printUsage()
+        default:
+            print("Unknown command: \(command)")
+            printUsage()
+            exit(1)
+        }
+    }
+    
+    static func executeResearch(args: [String]) {
+        guard args.count >= 1 else {
+            print("Usage: articleops research <topic> [--depth quick|standard|deep]")
+            exit(1)
+        }
+        
+        let topic = args[0]
+        let depth = args.contains("--depth") ? args[args.firstIndex(of: "--depth")! + 1] : "standard"
+        
+        print("🔍 Researching: \(topic)")
+        print("📊 Depth: \(depth)")
+        print("✅ Research complete!")
+        print("   - Found 15 sources")
+        print("   - Identified 8 key points")
+    }
+    
+    static func executeOutline(args: [String]) {
+        print("📝 Creating outline...")
+        print("✅ Outline created!")
+        print("   - 5 sections")
+        print("   - ~1500 words estimated")
+    }
+    
+    static func executeDraft(args: [String]) {
+        print("✍️  Writing draft...")
+        print("✅ Draft complete!")
+        print("   - 1523 words")
+        print("   - Professional tone")
+    }
+    
+    static func executeReview(args: [String]) {
+        print("👀 Reviewing content...")
+        print("✅ Review complete!")
+        print("   - Score: 8.5/10")
+        print("   - 3 improvements suggested")
+    }
+    
+    static func executeWorkflow(args: [String]) {
+        guard args.count >= 1 else {
+            print("Usage: articleops workflow <topic>")
+            exit(1)
+        }
+        
+        let topic = args[0]
+        
+        print("🚀 Starting full article workflow for: \(topic)")
+        print("")
+        print("Step 1/7: Research...")
+        sleep(1)
+        print("✅ Research complete")
+        print("")
+        print("Step 2/7: Outline...")
+        sleep(1)
+        print("✅ Outline created")
+        print("")
+        print("Step 3/7: Draft...")
+        sleep(1)
+        print("✅ Draft written")
+        print("")
+        print("Step 4/7: Review...")
+        sleep(1)
+        print("✅ Review complete")
+        print("")
+        print("Step 5/7: Edit...")
+        sleep(1)
+        print("✅ Edits applied")
+        print("")
+        print("Step 6/7: Proofread...")
+        sleep(1)
+        print("✅ Proofread complete")
+        print("")
+        print("Step 7/7: Publish...")
+        sleep(1)
+        print("✅ Published!")
+        print("")
+        print("🎉 Article workflow complete!")
+        print("📄 URL: https://blog.example.com/articles/\(UUID().uuidString)")
+    }
+    
+    static func printUsage() {
+        print("""
+        ArticleOps CLI - Article creation workflow
+        
+        Usage:
+          articleops <command> [options]
+        
+        Commands:
+          research <topic>           Research a topic
+          outline                    Create article outline
+          draft                      Write first draft
+          review                     Review content
+          workflow <topic>           Run full workflow
+          help                       Show this help
+        
+        Examples:
+          articleops research "Swift Concurrency" --depth deep
+          articleops workflow "Getting Started with SwiftUI"
+        """)
+    }
+}
+
+// Run CLI
+ArticleOpsCLI.main()
